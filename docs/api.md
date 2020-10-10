@@ -4,7 +4,7 @@
 
 ## 1. reactive
 
-> 响应式数据，使用Proxy进行代理
+响应式数据，使用Proxy进行代理
 
 ```html
   <p><button @click="change(true)">支持</button> 支持：{{state.support}}</p>
@@ -34,7 +34,7 @@ export default {
 
 ## 2. readonly
 
->传入一个对象（响应式或普通）或 ref，返回一个原始对象的只读代理一个只读的代理是“深层的”，对象内部任何嵌套的属性也都是只读的
+传入一个对象（响应式或普通）或 ref，返回一个原始对象的只读代理一个只读的代理是“深层的”，对象内部任何嵌套的属性也都是只读的
 
 ```html
   <div>
@@ -80,7 +80,7 @@ copy.count++; // warning!
 
 ## 3. isProxy
 
-> 检查对象是否由`proxy`进行代理
+检查对象是否由`proxy`进行代理
 
 ```js
   const reactiveObj = reactive({
@@ -105,7 +105,7 @@ copy.count++; // warning!
 
 ## 4. isReactive
 
-> 检查对象是否通过`reactive`创建的代理对象
+检查对象是否通过`reactive`创建的代理对象
 
 ```js
   const state = reactive({count: 0})
@@ -124,5 +124,93 @@ copy.count++; // warning!
 
 ## 5. isReadonly
 
-> 检查对象是否为只读代理
+检查对象是否通过`readonly`创建的只读代理对象
 
+```js
+const state = reactive({count: 0})
+const copy = readonly(state)
+const obj = { a: 0 }
+const handler = {
+  get: function (obj, prop) {
+    return prop in obj ? obj[prop] : 37
+  }
+}
+const p = new Proxy({}, handler)
+console.log(isReadonly(state)) // false
+console.log(isReadonly(copy)) // true
+console.log(isReadonly(p)) // true
+```
+
+## 6. toRaw
+
+返回由`reactive`或`readonly`方法转换成响应式代理的普通对象。
+
+```js
+  const foo = {count: 0}
+  const reactiveFoo = reactive(foo)
+  const copyFoo = readonly(reactiveFoo)
+  console.log(toRaw(reactiveFoo) === foo) // true
+  console.log(toRaw(copyFoo) === foo) // true
+  console.log(toRaw(copyFoo)) // {count: 0}
+  console.log(toRaw('diqiu')) // diqiu
+```
+
+## 7. markRaw
+
+标记一个对象，使其永远不会转换为代理。返回对象本身。
+
+```js
+const obj = markRaw({count: 0})
+// 通过markRaw 对obj增加属性 __v_skip: true
+console.log(obj) // {count: 0, __v_skip: true}
+const state = reactive(obj)
+console.log(state) // {count: 0, __v_skip: true}
+console.log(isReactive(state)) // false
+```
+
+## 8. shallowReactive
+
+代理其对象自身属性，嵌套对象属性怎么不进行代理
+
+```js
+const state = shallowReactive({
+  age: 18,
+  other: {
+    name: 'diqiu',
+  }
+})
+watch(() => state.age, () => {
+  console.log('age', state) // age Proxy {age: 20, other: {…}}
+})
+// 改变数据不会触发监听
+watch(() => state.other.name, () => {
+  console.log('other', state.other)
+})
+setTimeout(() => {
+  state.age = 20
+}, 1000)
+setTimeout(() => {
+  state.other.name = '娃哈哈'
+}, 5000)
+console.log(isReactive(state)) // true
+console.log(isReactive(state.age)) // false
+console.log(isReactive(state.other.name)) // false
+```
+
+## 9. shallowReadonly
+
+创建一个代理对象，使其自身属性为只读，嵌套属性不进行处理
+
+```js
+const state = shallowReadonly({
+  count: 1,
+  other: {
+    name: 'diqiu'
+  }
+})
+
+state.count = 10 // vue.js:629 Set operation on key "count" failed: target is readonly
+state.other.name = 'iiLsss' 
+console.log(state) // {count: 1, other: {name: 'iiLsss'}}
+
+```
