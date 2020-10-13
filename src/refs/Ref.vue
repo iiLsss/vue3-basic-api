@@ -5,11 +5,14 @@
 </template>
 
 <script>
-import { ref } from 'vue'
+import { ref, unref } from 'vue'
 export default {
   setup () {
     const count = ref(0)
-    console.log(count)
+    const num = 12
+    console.log(count) // RefImpl {_rawValue: 0, _shallow: false, __v_isRef: true, _value: 0}
+    console.log(unref(count)) // 0
+    console.log(unref(num)) //
     const reduce = () => {
       count.value--
     }
